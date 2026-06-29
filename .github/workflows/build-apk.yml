@@ -1,0 +1,46 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: r0adkll/setup-android@v2
+        with:
+          api-levels: 34
+          build-tools: 34.0.0
+          ndk: 25.2.9519653
+
+      # If the repo does not include gradlew, install Gradle here (so CI can run gradle tasks)
+      - name: Install Gradle CLI
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: '8.2.2'
+
+      - name: Run Gradle assembleRelease
+        # If you committed gradlew, replace the command with: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/**/*.apk
